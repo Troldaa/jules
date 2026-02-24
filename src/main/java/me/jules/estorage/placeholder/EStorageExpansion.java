@@ -56,6 +56,17 @@ public class EStorageExpansion extends PlaceholderExpansion {
                     .collect(Collectors.joining(", "));
         }
 
+        if (params.equalsIgnoreCase("max_invites")) {
+            if (player.isOnline()) {
+                return String.valueOf(plugin.getStorageManager().getMaxInvitesForPlayer(player.getPlayer()));
+            }
+            return "0";
+        }
+
+        if (params.equalsIgnoreCase("party_count")) {
+            return String.valueOf(plugin.getInviteManager().getInvitedPlayers(player.getUniqueId()).size());
+        }
+
         return null;
     }
 }
