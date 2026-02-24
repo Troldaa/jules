@@ -10,11 +10,16 @@ public class InviteManager {
     private final Map<UUID, Set<UUID>> invites = new HashMap<>(); // Host -> Invited
     private final Set<UUID> ipBypass = new HashSet<>();
 
+    // Pending confirmations: Host UUID -> Target UUID
+    private final Map<UUID, UUID> pendingHostConfirmations = new HashMap<>();
+    // Pending invitations: Target UUID -> Host UUID
+    private final Map<UUID, UUID> pendingGuestAcceptances = new HashMap<>();
+
     public InviteManager(EStorage plugin) {
         this.plugin = plugin;
     }
 
-    public boolean invite(Player host, Player target) {
+    public boolean canInvite(Player host, Player target) {
         if (host.getAddress().getAddress().getHostAddress().equals(target.getAddress().getAddress().getHostAddress()) && !ipBypass.contains(host.getUniqueId())) {
             return false; // Same IP and no bypass
         }
@@ -25,9 +30,36 @@ public class InviteManager {
         if (hostInvites.size() >= limit) {
             return false; // Limit reached
         }
-
-        hostInvites.add(target.getUniqueId());
         return true;
+    }
+
+    public void startHostConfirmation(UUID host, UUID target) {
+        pendingHostConfirmations.put(host, target);
+        // We could add a task to remove it after 30 seconds
+    }
+
+    public UUID getPendingHostConfirmation(UUID host) {
+        return pendingHostConfirmations.get(host);
+    }
+
+    public void removeHostConfirmation(UUID host) {
+        pendingHostConfirmations.remove(host);
+    }
+
+    public void startGuestAcceptance(UUID host, UUID target) {
+        pendingGuestAcceptances.put(target, host);
+    }
+
+    public UUID getPendingGuestAcceptance(UUID target) {
+        return pendingGuestAcceptances.get(target);
+    }
+
+    public void removeGuestAcceptance(UUID target) {
+        pendingGuestAcceptances.remove(target);
+    }
+
+    public void finalizeInvite(UUID host, UUID target) {
+        invites.computeIfAbsent(host, k -> new HashSet<>()).add(target);
     }
 
     public void kick(UUID hostUuid, UUID targetUuid) {

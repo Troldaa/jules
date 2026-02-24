@@ -1,16 +1,27 @@
 package me.jules.estorage.commands;
 
 import me.jules.estorage.EStorage;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-public class StorageCommand implements CommandExecutor {
+public class StorageCommand implements CommandExecutor, TabCompleter {
 
     private final EStorage plugin;
 
@@ -19,7 +30,7 @@ public class StorageCommand implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(getMessage("only_players"));
             return true;
@@ -56,12 +67,26 @@ public class StorageCommand implements CommandExecutor {
                     player.sendMessage(getMessage("no_permission"));
                     return true;
                 }
-                plugin.getInviteManager().toggleIpBypass(player.getUniqueId());
-                if (plugin.getInviteManager().hasIpBypass(player.getUniqueId())) {
-                    player.sendMessage(getMessage("ip_bypass_enabled"));
-                } else {
-                    player.sendMessage(getMessage("ip_bypass_disabled"));
+                Player targetBypass = player;
+                if (args.length >= 2) {
+                    targetBypass = Bukkit.getPlayer(args[1]);
+                    if (targetBypass == null) {
+                        player.sendMessage(getMessage("player_not_found"));
+                        return true;
+                    }
                 }
+                plugin.getInviteManager().toggleIpBypass(targetBypass.getUniqueId());
+                if (plugin.getInviteManager().hasIpBypass(targetBypass.getUniqueId())) {
+                    player.sendMessage(getMessage("ip_bypass_enabled").replace("%player%", targetBypass.getName()));
+                } else {
+                    player.sendMessage(getMessage("ip_bypass_disabled").replace("%player%", targetBypass.getName()));
+                }
+                break;
+            case "accept":
+                handleAccept(player);
+                break;
+            case "deny":
+                handleDeny(player);
                 break;
             default:
                 player.sendMessage(ChatColor.RED + "Unknown subcommand. Use: /estorage [party|invite|kick|bypassip]");
@@ -99,9 +124,19 @@ public class StorageCommand implements CommandExecutor {
             return;
         }
 
-        if (plugin.getInviteManager().invite(host, target)) {
-            host.sendMessage(getMessage("invite_sent").replace("%player%", target.getName()));
-            target.sendMessage(getMessage("invited").replace("%player%", host.getName()));
+        if (plugin.getInviteManager().canInvite(host, target)) {
+            plugin.getInviteManager().startHostConfirmation(host.getUniqueId(), target.getUniqueId());
+
+            TextComponent message = new TextComponent(getMessage("host_confirm_prompt").replace("%player%", target.getName()));
+            TextComponent accept = new TextComponent(ChatColor.GREEN + " [ACCEPT]");
+            accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage accept"));
+            accept.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + "Click to accept")));
+
+            TextComponent deny = new TextComponent(ChatColor.RED + " [DENY]");
+            deny.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage deny"));
+            deny.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + "Click to deny")));
+
+            host.spigot().sendMessage(message, accept, deny);
         } else {
             if (host.getAddress().getAddress().getHostAddress().equals(target.getAddress().getAddress().getHostAddress()) && !plugin.getInviteManager().hasIpBypass(host.getUniqueId())) {
                 host.sendMessage(getMessage("same_ip"));
@@ -109,6 +144,62 @@ public class StorageCommand implements CommandExecutor {
                 host.sendMessage(getMessage("limit_reached"));
             }
         }
+    }
+
+    private void handleAccept(Player player) {
+        // Check if host confirmation
+        UUID hostPendingTarget = plugin.getInviteManager().getPendingHostConfirmation(player.getUniqueId());
+        if (hostPendingTarget != null) {
+            Player target = Bukkit.getPlayer(hostPendingTarget);
+            if (target != null) {
+                plugin.getInviteManager().removeHostConfirmation(player.getUniqueId());
+                plugin.getInviteManager().startGuestAcceptance(player.getUniqueId(), target.getUniqueId());
+
+                player.sendMessage(getMessage("host_accepted").replace("%player%", target.getName()));
+
+                TextComponent message = new TextComponent(getMessage("guest_confirm_prompt").replace("%player%", player.getName()));
+                TextComponent accept = new TextComponent(ChatColor.GREEN + " [ACCEPT]");
+                accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage accept"));
+                accept.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + "Click to accept")));
+
+                TextComponent deny = new TextComponent(ChatColor.RED + " [DENY]");
+                deny.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage deny"));
+                deny.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + "Click to deny")));
+
+                target.spigot().sendMessage(message, accept, deny);
+            }
+            return;
+        }
+
+        // Check if guest acceptance
+        UUID guestPendingHost = plugin.getInviteManager().getPendingGuestAcceptance(player.getUniqueId());
+        if (guestPendingHost != null) {
+            Player host = Bukkit.getPlayer(guestPendingHost);
+            if (host != null) {
+                plugin.getInviteManager().removeGuestAcceptance(player.getUniqueId());
+                plugin.getInviteManager().finalizeInvite(host.getUniqueId(), player.getUniqueId());
+
+                player.sendMessage(getMessage("guest_accepted").replace("%player%", host.getName()));
+                host.sendMessage(getMessage("invite_success").replace("%player%", player.getName()));
+            }
+            return;
+        }
+
+        player.sendMessage(getMessage("no_pending_actions"));
+    }
+
+    private void handleDeny(Player player) {
+        if (plugin.getInviteManager().getPendingHostConfirmation(player.getUniqueId()) != null) {
+            plugin.getInviteManager().removeHostConfirmation(player.getUniqueId());
+            player.sendMessage(getMessage("action_denied"));
+            return;
+        }
+        if (plugin.getInviteManager().getPendingGuestAcceptance(player.getUniqueId()) != null) {
+            plugin.getInviteManager().removeGuestAcceptance(player.getUniqueId());
+            player.sendMessage(getMessage("action_denied"));
+            return;
+        }
+        player.sendMessage(getMessage("no_pending_actions"));
     }
 
     private void kickPlayer(Player host, String targetName) {
@@ -150,6 +241,28 @@ public class StorageCommand implements CommandExecutor {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
+        List<String> completions = new ArrayList<>();
+        if (args.length == 1) {
+            completions.add("party");
+            completions.add("invite");
+            completions.add("kick");
+            completions.add("bypassip");
+            completions.add("accept");
+            completions.add("deny");
+            return completions.stream().filter(s -> s.startsWith(args[0].toLowerCase())).collect(Collectors.toList());
+        } else if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("invite") || args[0].equalsIgnoreCase("kick") || args[0].equalsIgnoreCase("bypassip")) {
+                return Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
+        }
+        return completions;
     }
 
     private String getMessage(String key) {
