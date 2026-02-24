@@ -51,7 +51,8 @@ storages:
 messages:
   invite_sent: "&aYou have invited %player% to your storage."
   invited: "&a%player% has invited you to their storage! Type /estorage party to open it."
-  already_invited: "&cThis player is already invited."
+  already_invited: "&cThis player already has a pending invitation."
+  already_in_party: "&cThis player is already in your party."
   not_invited: "&cYou have not been invited to anyone's storage."
   kick_success: "&aYou have kicked %player% from your storage."
   kicked: "&cYou have been kicked from %player%'s storage."

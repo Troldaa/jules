@@ -120,6 +120,11 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
         }
 
         if (plugin.getInviteManager().isInvited(host.getUniqueId(), target.getUniqueId())) {
+            host.sendMessage(getMessage("already_in_party"));
+            return;
+        }
+
+        if (plugin.getInviteManager().hasPendingInvitation(host.getUniqueId(), target.getUniqueId())) {
             host.sendMessage(getMessage("already_invited"));
             return;
         }
@@ -250,12 +255,14 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
             completions.add("party");
             completions.add("invite");
             completions.add("kick");
-            completions.add("bypassip");
+            if (sender.hasPermission("estorage.admin")) {
+                completions.add("bypassip");
+            }
             completions.add("accept");
             completions.add("deny");
             return completions.stream().filter(s -> s.startsWith(args[0].toLowerCase())).collect(Collectors.toList());
         } else if (args.length == 2) {
-            if (args[0].equalsIgnoreCase("invite") || args[0].equalsIgnoreCase("kick") || args[0].equalsIgnoreCase("bypassip")) {
+            if (args[0].equalsIgnoreCase("invite") || args[0].equalsIgnoreCase("kick") || (args[0].equalsIgnoreCase("bypassip") && sender.hasPermission("estorage.admin"))) {
                 return Bukkit.getOnlinePlayers().stream()
                         .map(Player::getName)
                         .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))

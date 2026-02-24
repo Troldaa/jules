@@ -62,6 +62,14 @@ public class InviteManager {
         invites.computeIfAbsent(host, k -> new HashSet<>()).add(target);
     }
 
+    public boolean hasPendingInvitation(UUID host, UUID target) {
+        // Check if host is waiting to confirm invitation to target
+        if (target.equals(pendingHostConfirmations.get(host))) return true;
+        // Check if target is waiting to accept invitation from host
+        if (host.equals(pendingGuestAcceptances.get(target))) return true;
+        return false;
+    }
+
     public void kick(UUID hostUuid, UUID targetUuid) {
         Set<UUID> hostInvites = invites.get(hostUuid);
         if (hostInvites != null) {
