@@ -83,6 +83,10 @@ public class EStorage extends JavaPlugin {
         return inviteManager;
     }
 
+    public void reloadPluginConfig() {
+        reloadConfig();
+    }
+
     public Database getDatabase() {
         return database;
     }

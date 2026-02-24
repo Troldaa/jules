@@ -88,8 +88,16 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
             case "deny":
                 handleDeny(player);
                 break;
+            case "reload":
+                if (!player.hasPermission("estorage.admin")) {
+                    player.sendMessage(getMessage("no_permission"));
+                    return true;
+                }
+                plugin.reloadPluginConfig();
+                player.sendMessage(getMessage("reload_success"));
+                break;
             default:
-                player.sendMessage(ChatColor.RED + "Unknown subcommand. Use: /estorage [party|invite|kick|bypassip]");
+                player.sendMessage(ChatColor.RED + "Unknown subcommand. Use: /estorage [party|invite|kick|bypassip|reload]");
                 break;
         }
 
@@ -133,11 +141,11 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
             plugin.getInviteManager().startHostConfirmation(host.getUniqueId(), target.getUniqueId());
 
             TextComponent message = new TextComponent(getMessage("host_confirm_prompt").replace("%player%", target.getName()));
-            TextComponent accept = new TextComponent(ChatColor.GREEN + " [ACCEPT]");
+            TextComponent accept = new TextComponent(" " + getMessage("accept_label"));
             accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage accept"));
             accept.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + "Click to accept")));
 
-            TextComponent deny = new TextComponent(ChatColor.RED + " [DENY]");
+            TextComponent deny = new TextComponent(" " + getMessage("deny_label"));
             deny.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage deny"));
             deny.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + "Click to deny")));
 
@@ -163,11 +171,11 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
                 player.sendMessage(getMessage("host_accepted").replace("%player%", target.getName()));
 
                 TextComponent message = new TextComponent(getMessage("guest_confirm_prompt").replace("%player%", player.getName()));
-                TextComponent accept = new TextComponent(ChatColor.GREEN + " [ACCEPT]");
+                TextComponent accept = new TextComponent(" " + getMessage("accept_label"));
                 accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage accept"));
                 accept.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + "Click to accept")));
 
-                TextComponent deny = new TextComponent(ChatColor.RED + " [DENY]");
+                TextComponent deny = new TextComponent(" " + getMessage("deny_label"));
                 deny.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage deny"));
                 deny.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + "Click to deny")));
 
@@ -257,6 +265,7 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
             completions.add("kick");
             if (sender.hasPermission("estorage.admin")) {
                 completions.add("bypassip");
+                completions.add("reload");
             }
             completions.add("accept");
             completions.add("deny");
