@@ -139,8 +139,16 @@ public class StorageCommand implements CommandExecutor {
 
         plugin.getInviteManager().kick(host.getUniqueId(), targetUuid);
         host.sendMessage(getMessage("kick_success").replace("%player%", name));
-        if (target != null) {
-            target.sendMessage(getMessage("kicked").replace("%player%", host.getName()));
+
+        String kickedMessage = getMessage("kicked").replace("%player%", host.getName());
+        if (target != null && target.isOnline()) {
+            target.sendMessage(kickedMessage);
+        } else {
+            try {
+                plugin.getDatabase().addPendingMessage(targetUuid, kickedMessage);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

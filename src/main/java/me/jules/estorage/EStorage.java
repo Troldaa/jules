@@ -4,6 +4,7 @@ import me.jules.estorage.commands.StorageCommand;
 import me.jules.estorage.database.Database;
 import me.jules.estorage.database.MySQL;
 import me.jules.estorage.database.SQLite;
+import me.jules.estorage.listeners.JoinListener;
 import me.jules.estorage.listeners.StorageListener;
 import me.jules.estorage.managers.InviteManager;
 import me.jules.estorage.managers.StorageManager;
@@ -32,6 +33,7 @@ public class EStorage extends JavaPlugin {
 
         getCommand("estorage").setExecutor(new StorageCommand(this));
         getServer().getPluginManager().registerEvents(new StorageListener(this), this);
+        getServer().getPluginManager().registerEvents(new JoinListener(this), this);
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new EStorageExpansion(this).register();

@@ -39,6 +39,10 @@ public abstract class Database {
 
     public abstract ItemStack[] loadStorage(UUID uuid) throws SQLException;
 
+    public abstract void addPendingMessage(UUID uuid, String message) throws SQLException;
+
+    public abstract java.util.List<String> getAndClearPendingMessages(UUID uuid) throws SQLException;
+
     protected String toBase64(ItemStack[] items) throws IllegalStateException {
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

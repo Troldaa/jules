@@ -25,6 +25,13 @@ storages:
         display_name: "&7Decorative Pane"
         lore:
           - "&8Just for show"
+      close_button:
+        slot: 8
+        material: BARRIER
+        display_name: "&cClose Storage"
+        lore:
+          - "&7Click to close"
+        click_command: "[close]"
   basic:
     permission: "estorage.basic"
     size: 3

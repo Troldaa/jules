@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class StorageManager {
     private final EStorage plugin;
     private final Map<UUID, Inventory> activeStorages = new HashMap<>();
+    private final Map<UUID, Map<Integer, String>> clickCommands = new HashMap<>();
 
     public StorageManager(EStorage plugin) {
         this.plugin = plugin;
@@ -52,6 +53,8 @@ public class StorageManager {
                         inv.setItem(i, items[i]);
                     }
                 }
+                // Still need to load click commands from config for this tier
+                populateClickCommands(owner);
             } else {
                 // First time, apply default items from config
                 applyDefaultItems(inv, owner);
@@ -64,25 +67,44 @@ public class StorageManager {
         return inv;
     }
 
-    public void applyDefaultItems(Inventory inv, Player owner) {
+    private String getBestTierKey(Player player) {
         ConfigurationSection storagesSection = plugin.getConfig().getConfigurationSection("storages");
-        if (storagesSection == null) return;
+        if (storagesSection == null) return "default";
 
         String bestKey = "default";
         for (String key : storagesSection.getKeys(false)) {
             String permission = storagesSection.getString(key + ".permission", "");
-            if (permission.isEmpty() || owner.hasPermission(permission)) {
+            if (permission.isEmpty() || player.hasPermission(permission)) {
                 bestKey = key;
             }
         }
+        return bestKey;
+    }
 
-        ConfigurationSection itemsSection = storagesSection.getConfigurationSection(bestKey + ".items");
+    private void populateClickCommands(Player owner) {
+        String bestKey = getBestTierKey(owner);
+        ConfigurationSection itemsSection = plugin.getConfig().getConfigurationSection("storages." + bestKey + ".items");
+        if (itemsSection != null) {
+            for (String itemKey : itemsSection.getKeys(false)) {
+                int slot = itemsSection.getInt(itemKey + ".slot");
+                String clickCommand = itemsSection.getString(itemKey + ".click_command");
+                if (clickCommand != null) {
+                    setClickCommand(owner.getUniqueId(), slot, clickCommand);
+                }
+            }
+        }
+    }
+
+    public void applyDefaultItems(Inventory inv, Player owner) {
+        String bestKey = getBestTierKey(owner);
+        ConfigurationSection itemsSection = plugin.getConfig().getConfigurationSection("storages." + bestKey + ".items");
         if (itemsSection != null) {
             for (String itemKey : itemsSection.getKeys(false)) {
                 int slot = itemsSection.getInt(itemKey + ".slot");
                 String materialName = itemsSection.getString(itemKey + ".material");
                 String displayName = itemsSection.getString(itemKey + ".display_name");
                 List<String> lore = itemsSection.getStringList(itemKey + ".lore");
+                String clickCommand = itemsSection.getString(itemKey + ".click_command");
 
                 Material material = Material.matchMaterial(materialName);
                 if (material != null && slot < inv.getSize()) {
@@ -94,6 +116,9 @@ public class StorageManager {
                         item.setItemMeta(meta);
                     }
                     inv.setItem(slot, item);
+                    if (clickCommand != null) {
+                        setClickCommand(owner.getUniqueId(), slot, clickCommand);
+                    }
                 }
             }
         }
@@ -147,9 +172,19 @@ public class StorageManager {
     public void handleClose(UUID uuid) {
         saveStorage(uuid);
         activeStorages.remove(uuid);
+        clickCommands.remove(uuid);
     }
 
     public Map<UUID, Inventory> getActiveStorages() {
         return activeStorages;
+    }
+
+    public String getClickCommand(UUID ownerUuid, int slot) {
+        Map<Integer, String> commands = clickCommands.get(ownerUuid);
+        return commands != null ? commands.get(slot) : null;
+    }
+
+    public void setClickCommand(UUID ownerUuid, int slot, String command) {
+        clickCommands.computeIfAbsent(ownerUuid, k -> new HashMap<>()).put(slot, command);
     }
 }
