@@ -127,6 +127,11 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        if (host.getUniqueId().equals(target.getUniqueId())) {
+            host.sendMessage(getMessage("cannot_invite_self"));
+            return;
+        }
+
         if (plugin.getInviteManager().isInvited(host.getUniqueId(), target.getUniqueId())) {
             host.sendMessage(getMessage("already_in_party"));
             return;
@@ -142,11 +147,11 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
 
             TextComponent message = new TextComponent(getMessage("host_confirm_prompt").replace("%player%", target.getName()));
             TextComponent accept = new TextComponent(" " + getMessage("accept_label"));
-            accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage accept"));
+            accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, getMessageRaw("accept_command")));
             accept.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + "Click to accept")));
 
             TextComponent deny = new TextComponent(" " + getMessage("deny_label"));
-            deny.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage deny"));
+            deny.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, getMessageRaw("deny_command")));
             deny.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + "Click to deny")));
 
             host.spigot().sendMessage(message, accept, deny);
@@ -172,11 +177,11 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
 
                 TextComponent message = new TextComponent(getMessage("guest_confirm_prompt").replace("%player%", player.getName()));
                 TextComponent accept = new TextComponent(" " + getMessage("accept_label"));
-                accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage accept"));
+                accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, getMessageRaw("accept_command")));
                 accept.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.GREEN + "Click to accept")));
 
                 TextComponent deny = new TextComponent(" " + getMessage("deny_label"));
-                deny.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/estorage deny"));
+                deny.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, getMessageRaw("deny_command")));
                 deny.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.RED + "Click to deny")));
 
                 target.spigot().sendMessage(message, accept, deny);
@@ -283,5 +288,9 @@ public class StorageCommand implements CommandExecutor, TabCompleter {
 
     private String getMessage(String key) {
         return ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("messages." + key, "Message not found: " + key));
+    }
+
+    private String getMessageRaw(String key) {
+        return plugin.getConfig().getString("messages." + key, "");
     }
 }
