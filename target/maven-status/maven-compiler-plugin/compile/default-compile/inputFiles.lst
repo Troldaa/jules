@@ -1,0 +1,9 @@
+/app/src/main/java/me/jules/estorage/EStorage.java
+/app/src/main/java/me/jules/estorage/listeners/StorageListener.java
+/app/src/main/java/me/jules/estorage/database/Database.java
+/app/src/main/java/me/jules/estorage/managers/StorageManager.java
+/app/src/main/java/me/jules/estorage/database/MySQL.java
+/app/src/main/java/me/jules/estorage/commands/StorageCommand.java
+/app/src/main/java/me/jules/estorage/placeholder/EStorageExpansion.java
+/app/src/main/java/me/jules/estorage/database/SQLite.java
+/app/src/main/java/me/jules/estorage/managers/InviteManager.java

@@ -1,0 +1,59 @@
+# EStorage Configuration
+
+database:
+  type: "sqlite" # or "mysql"
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "estorage"
+    username: "root"
+    password: ""
+
+menu_title: "&8%host%'s Storage"
+
+# Storage sizes and permissions
+# The plugin will check permissions from bottom to top and give the last one that matches.
+storages:
+  default:
+    permission: ""
+    size: 5
+    invitation_limit: 1
+    items:
+      glass:
+        slot: 0
+        material: GRAY_STAINED_GLASS_PANE
+        display_name: "&7Decorative Pane"
+        lore:
+          - "&8Just for show"
+  basic:
+    permission: "estorage.basic"
+    size: 3
+    invitation_limit: 2
+    items: {}
+  medium:
+    permission: "estorage.medium"
+    size: 4
+    invitation_limit: 3
+    items: {}
+  advanced:
+    permission: "estorage.advanced"
+    size: 6
+    invitation_limit: 5
+    items: {}
+
+messages:
+  invite_sent: "&aYou have invited %player% to your storage."
+  invited: "&a%player% has invited you to their storage! Type /estorage party to open it."
+  already_invited: "&cThis player is already invited."
+  not_invited: "&cYou have not been invited to anyone's storage."
+  kick_success: "&aYou have kicked %player% from your storage."
+  kicked: "&cYou have been kicked from %player%'s storage."
+  same_ip: "&cYou cannot invite someone with the same IP address."
+  ip_bypass_enabled: "&aIP bypass enabled for you."
+  ip_bypass_disabled: "&cIP bypass disabled for you."
+  no_permission: "&cYou don't have permission to do this."
+  only_players: "Only players can use this command."
+  player_not_found: "&cPlayer not found."
+  limit_reached: "&cYou have reached your invitation limit."
+  not_invited_to_host: "&cYou are not invited to that player's storage."
+  storage_not_found: "&cThat player does not have a storage or is offline."

@@ -1,0 +1,43 @@
+package me.jules.estorage.listeners;
+
+import me.jules.estorage.EStorage;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.Inventory;
+
+import java.util.Map;
+import java.util.UUID;
+
+public class StorageListener implements Listener {
+
+    private final EStorage plugin;
+
+    public StorageListener(EStorage plugin) {
+        this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        Inventory inv = event.getInventory();
+
+        // Check if this inventory is one of our managed storages
+        UUID ownerUuid = null;
+        for (Map.Entry<UUID, Inventory> entry : plugin.getStorageManager().getActiveStorages().entrySet()) {
+            if (entry.getValue().equals(inv)) {
+                ownerUuid = entry.getKey();
+                break;
+            }
+        }
+
+        if (ownerUuid != null) {
+            // If this was the last viewer, save and remove from cache
+            // Viewers list includes the person currently closing the inventory
+            if (inv.getViewers().size() <= 1) {
+                plugin.getStorageManager().handleClose(ownerUuid);
+            } else {
+                plugin.getStorageManager().saveStorage(ownerUuid);
+            }
+        }
+    }
+}
